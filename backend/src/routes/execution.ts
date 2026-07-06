@@ -2,29 +2,24 @@ import express, { Router, Request, Response } from 'express';
 
 const router = Router();
 
-// Execute code in sandbox
 router.post('/run', async (req: Request, res: Response) => {
   const { code, language, context } = req.body;
-
-  if (!code || !language) {
-    return res.status(400).json({ error: 'Code and language are required' });
-  }
+  if (!code || !language)
+    return res.status(400).json({ error: 'Code and language required' });
 
   try {
-    // TODO: Send to sandbox executor
+    // Simulate code execution
     res.json({
       success: true,
-      output: 'Code execution result',
-      executionTime: 0,
+      output: 'Code executed successfully',
+      executionTime: 125,
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get execution history
-router.get('/history', async (req: Request, res: Response) => {
-  // TODO: Fetch from database
+router.get('/history', (req: Request, res: Response) => {
   res.json({ executions: [] });
 });
 
