@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { Send, Play } from 'lucide-react';
+import { aiService } from '../services/api';
 import '../styles/Editor.css';
 
 const EditorPage: React.FC = () => {
@@ -13,6 +14,7 @@ const EditorPage: React.FC = () => {
     { role: 'assistant', content: 'Hi! I\'m Kiln, your AI assistant. Ask me anything about coding!' }
   ]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleRunCode = () => {
     try {
@@ -24,20 +26,31 @@ const EditorPage: React.FC = () => {
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
     
-    setMessages([...messages, { role: 'user', content: input }]);
+    const userMessage = input;
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
-    
-    // Simulate AI response
-    setTimeout(() => {
+    setLoading(true);
+
+    try {
+      const response = await aiService.chat(userMessage);
+      const assistantMessage = response.data.message || 'I understood your message!';
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'I understood your message! This is a demo response.' 
+        content: assistantMessage
       }]);
-    }, 500);
+    } catch (error: any) {
+      console.error('AI Chat error:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I\'m having trouble connecting. Make sure your backend is running and you have an OpenAI API key set up.' 
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -93,6 +106,11 @@ const EditorPage: React.FC = () => {
                 <div className="message-content">{msg.content}</div>
               </div>
             ))}
+            {loading && (
+              <div className="message message-assistant">
+                <div className="message-content">✨ Thinking...</div>
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSendMessage} className="chat-form">
@@ -100,10 +118,11 @@ const EditorPage: React.FC = () => {
               placeholder="Ask Kiln anything..." 
               value={input} 
               onChange={(e) => setInput(e.target.value)}
+              disabled={loading}
               rows={3}
             />
-            <button type="submit" className="btn btn-primary btn-send">
-              <Send size={16} /> Send
+            <button type="submit" className="btn btn-primary btn-send" disabled={loading}>
+              <Send size={16} /> {loading ? 'Sending...' : 'Send'}
             </button>
           </form>
         </div>
